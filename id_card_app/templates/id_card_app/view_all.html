@@ -14,6 +14,7 @@
                     <img src="{{ student.image.url }}" alt="{{ student.name }}'s ID Card" class="id-card-img">
                     <div class="id-card-info">
                         <h3>{{ student.name }}</h3>
+                        <p><strong>Class:</strong> {{ student.student_class }} {% if student.section %}- {{ student.section }}{% endif %}</p>
                         <p><strong>Roll No:</strong> {{ student.roll_no }}</p>
                         <a href="{{ student.image.url }}" download class="btn btn-block mt-2">Download</a>
                     </div>

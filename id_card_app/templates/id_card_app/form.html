@@ -1,0 +1,6 @@
+<h2>Fill Student Details</h2>
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit">Generate ID Card</button>
+</form>

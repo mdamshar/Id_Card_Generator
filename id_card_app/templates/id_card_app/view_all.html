@@ -1,0 +1,5 @@
+<h2>All ID Cards</h2>
+{% for student in students %}
+    <p>{{ student.name }} - {{ student.roll_no }}</p>
+    <img src="{{ student.image.url }}" width="300px"><br><br>
+{% endfor %}

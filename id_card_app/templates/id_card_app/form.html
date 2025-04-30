@@ -1,6 +1,16 @@
-<h2>Fill Student Details</h2>
-<form method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <button type="submit">Generate ID Card</button>
-</form>
+{% extends 'id_card_app/base.html' %}
+
+{% block title %}New ID Card - ID Card Generator{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Create New ID Card</h2>
+    <p class="text-center mb-2">Fill in the student details to generate an ID card</p>
+    
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-block">Generate ID Card</button>
+    </form>
+</div>
+{% endblock %}

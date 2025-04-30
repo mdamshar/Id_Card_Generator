@@ -1,3 +1,36 @@
-<h2>Student ID Card Generator</h2>
-<a href="{% url 'new_id_card' %}">New ID Card</a> |
-<a href="{% url 'view_all' %}">View All</a>
+{% extends 'id_card_app/base.html' %}
+
+{% block title %}Home - ID Card Generator{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1>Student ID Card Generator</h1>
+    <p class="text-center mb-2">Create professional student ID cards with just a few clicks.</p>
+    
+    <div class="btn-container">
+        <a href="{% url 'new_id_card' %}" class="btn">Create New ID Card</a>
+        <a href="{% url 'view_all' %}" class="btn">View All ID Cards</a>
+    </div>
+</div>
+
+<div class="card">
+    <h2>How It Works</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1.5rem; margin-top: 1.5rem;">
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;">1</div>
+            <h3>Fill the Form</h3>
+            <p>Enter student details including name, roll number, and photo</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;">2</div>
+            <h3>Generate Card</h3>
+            <p>Our system will automatically generate a professional ID card</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 2.5rem; color: var(--primary-color); margin-bottom: 1rem;">3</div>
+            <h3>Download or Print</h3>
+            <p>Save the ID card digitally or print it for physical use</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -36,7 +36,7 @@ def new_id_card(request):
                 font = ImageFont.truetype(font_path, 20)
 
                 # Draw text with student data from form
-                draw.text((50, 60), f"Name: {student.name}", font=font, fill="black")
+                draw.text((50, 5), f"Name: {student.name}", font=font, fill="black")
                 draw.text((50, 100), f"Father: {student.father_name}", font=font, fill="black")
                 draw.text((50, 140), f"Mother: {student.mother_name}", font=font, fill="black")
                 draw.text((50, 180), f"Class: {student.student_class}", font=font, fill="black")
@@ -119,19 +119,19 @@ def edit_id_card(request, student_id):
                 font = ImageFont.truetype(font_path, 20)
 
                 # Draw text on the template with student data
-                draw.text((50, 60), f"Name: {student.name}", font=font, fill="black")
-                draw.text((50, 100), f"Father: {student.father_name}", font=font, fill="black")
-                draw.text((50, 140), f"Mother: {student.mother_name}", font=font, fill="black")
-                draw.text((50, 180), f"Class: {student.student_class}", font=font, fill="black")
-                draw.text((50, 220), f"Section: {student.section}", font=font, fill="black")
-                draw.text((50, 260), f"Roll No: {student.roll_no}", font=font, fill="black")
-                draw.text((50, 300), f"Mobile: {student.mobile}", font=font, fill="black")
+                draw.text((222, 400), f"{student.name}", font=font, fill="#0071BC")
+                draw.text((50, 100), f"{student.father_name}", font=font, fill="black")
+                draw.text((50, 140), f"{student.mother_name}", font=font, fill="black")
+                draw.text((50, 180), f"{student.student_class}", font=font, fill="black")
+                draw.text((50, 220), f"{student.section}", font=font, fill="black")
+                draw.text((50, 260), f"{student.roll_no}", font=font, fill="black")
+                draw.text((50, 300), f"{student.mobile}", font=font, fill="black")
 
                 # Add profile photo to ID card if available
                 if student.profile_photo:
                     # Position for profile photo (adjust as needed)
-                    photo_position = (400, 80)  # Right side of card
-                    photo_size = (150, 150)    # Size of photo on card
+                    photo_position = (185, 280)  # center side of card
+                    photo_size = (225, 225)    # Size of photo on card
                     
                     # Open and resize profile photo
                     profile_photo_path = os.path.join(settings.MEDIA_ROOT, student.profile_photo.name)

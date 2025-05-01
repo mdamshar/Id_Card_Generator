@@ -11,13 +11,21 @@
         <div class="id-card-grid">
             {% for student in students %}
                 <div class="id-card-item">
-                    <img src="{{ student.image.url }}" alt="{{ student.name }}'s ID Card" class="id-card-img">
+                    {% if student.image %}
+                        <img src="{{ student.image.url }}" alt="{{ student.name }}'s ID Card" class="id-card-img">
+                    {% else %}
+                        <div class="no-image">No ID Card Image Available</div>
+                    {% endif %}
                     <div class="id-card-info">
                         <h3>{{ student.name }}</h3>
                         <p><strong>Class:</strong> {{ student.student_class }} {% if student.section %}- {{ student.section }}{% endif %}</p>
                         <p><strong>Roll No:</strong> {{ student.roll_no }}</p>
                         <div class="action-buttons">
-                            <a href="{{ student.image.url }}" download class="btn btn-block mt-2 mb-1">Download</a>
+                            {% if student.image %}
+                                <a href="{{ student.image.url }}" download class="btn btn-block mt-2 mb-1">Download</a>
+                            {% else %}
+                                <button disabled class="btn btn-block mt-2 mb-1 btn-disabled">No Image to Download</button>
+                            {% endif %}
                             <div class="btn-group">
                                 <a href="{% url 'edit_id_card' student.id %}" class="btn btn-edit">Edit</a>
                                 <a href="{% url 'delete_id_card' student.id %}" class="btn btn-delete">Delete</a>
@@ -64,6 +72,22 @@
     
     .btn-delete:hover {
         background-color: #c0392b;
+    }
+    
+    .btn-disabled {
+        background-color: #95a5a6;
+        cursor: not-allowed;
+    }
+    
+    .no-image {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+        color: #7f8c8d;
+        font-weight: 500;
+        border-bottom: 1px solid #eee;
     }
 </style>
 {% endblock %}

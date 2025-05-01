@@ -11,6 +11,7 @@ class Student(models.Model):
     roll_no = models.CharField(max_length=10)
     address = models.TextField()
     mobile = models.CharField(max_length=15)
+    profile_photo = models.ImageField(upload_to='profile_photos/', null=True, blank=True, verbose_name="Student Photo")
     image = models.ImageField(upload_to='cards/', null=True, blank=True)
 
     def __str__(self):

@@ -1,16 +1,38 @@
 {% extends 'id_card_app/base.html' %}
 
-{% block title %}New ID Card - ID Card Generator{% endblock %}
+{% block title %}{% if edit_mode %}Edit ID Card{% else %}New ID Card{% endif %} - ID Card Generator{% endblock %}
 
 {% block content %}
 <div class="card">
-    <h2>Create New ID Card</h2>
-    <p class="text-center mb-2">Fill in the student details to generate an ID card</p>
+    <h2>{% if edit_mode %}Edit ID Card{% else %}Create New ID Card{% endif %}</h2>
+    <p class="text-center mb-2">{% if edit_mode %}Update the student details{% else %}Fill in the student details to generate an ID card{% endif %}</p>
     
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-block">Generate ID Card</button>
+        <button type="submit" class="btn btn-block">
+            {% if edit_mode %}Update ID Card{% else %}Generate ID Card{% endif %}
+        </button>
     </form>
+    
+    {% if edit_mode %}
+    <div class="text-center mt-2">
+        <a href="{% url 'view_all' %}" class="btn-link">Cancel and return to all ID cards</a>
+    </div>
+    {% endif %}
 </div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn-link {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 500;
+    }
+    
+    .btn-link:hover {
+        text-decoration: underline;
+    }
+</style>
 {% endblock %}

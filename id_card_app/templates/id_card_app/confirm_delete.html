@@ -1,0 +1,93 @@
+{% extends 'id_card_app/base.html' %}
+
+{% block title %}Confirm Delete - ID Card Generator{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h2>Confirm Deletion</h2>
+    
+    <div class="confirm-delete-content">
+        <div class="text-center mb-2">
+            <p>Are you sure you want to delete the ID card for <strong>{{ student.name }}</strong>?</p>
+            <p class="warning-text">This action cannot be undone.</p>
+        </div>
+        
+        <img src="{{ student.image.url }}" alt="{{ student.name }}'s ID Card" class="confirm-delete-img">
+        
+        <div class="student-details">
+            <p><strong>Name:</strong> {{ student.name }}</p>
+            <p><strong>Class:</strong> {{ student.student_class }} {% if student.section %}- {{ student.section }}{% endif %}</p>
+            <p><strong>Roll No:</strong> {{ student.roll_no }}</p>
+        </div>
+        
+        <form method="post" class="mt-2">
+            {% csrf_token %}
+            <div class="confirm-buttons">
+                <button type="submit" class="btn btn-delete">Delete</button>
+                <a href="{% url 'view_all' %}" class="btn btn-cancel">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .confirm-delete-content {
+        max-width: 500px;
+        margin: 0 auto;
+    }
+    
+    .confirm-delete-img {
+        max-width: 300px;
+        display: block;
+        margin: 1rem auto;
+        border: 1px solid #eee;
+        border-radius: var(--border-radius);
+    }
+    
+    .warning-text {
+        color: #e74c3c;
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+    
+    .student-details {
+        background-color: #f8f9fa;
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        margin: 1rem 0;
+    }
+    
+    .student-details p {
+        margin-bottom: 0.5rem;
+    }
+    
+    .confirm-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 1.5rem;
+    }
+    
+    .btn-delete, .btn-cancel {
+        flex: 1;
+        text-align: center;
+    }
+    
+    .btn-delete {
+        background-color: #e74c3c;
+    }
+    
+    .btn-delete:hover {
+        background-color: #c0392b;
+    }
+    
+    .btn-cancel {
+        background-color: #7f8c8d;
+    }
+    
+    .btn-cancel:hover {
+        background-color: #6c7a7a;
+    }
+</style>
+{% endblock %}

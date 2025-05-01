@@ -119,7 +119,7 @@ def edit_id_card(request, student_id):
                 font = ImageFont.truetype(font_path, 20)
 
                 # Draw text on the template with student data
-                draw.text((222, 400), f"{student.name}", font=font, fill="#0071BC")
+                draw.text((222, 40), f"{student.name}", font=font, fill="#0071BC")
                 draw.text((50, 100), f"{student.father_name}", font=font, fill="black")
                 draw.text((50, 140), f"{student.mother_name}", font=font, fill="black")
                 draw.text((50, 180), f"{student.student_class}", font=font, fill="black")
@@ -136,11 +136,29 @@ def edit_id_card(request, student_id):
                     # Open and resize profile photo
                     profile_photo_path = os.path.join(settings.MEDIA_ROOT, student.profile_photo.name)
                     if os.path.exists(profile_photo_path):
-                        photo = Image.open(profile_photo_path).convert("RGBA")
-                        photo = photo.resize(photo_size)
-                        
-                        # Paste photo onto template
-                        template.paste(photo, photo_position, photo)
+                        try:
+                            # Try to remove background if rembg is available
+                            try:
+                                with open(profile_photo_path, "rb") as photo_file:
+                                    input_photo = photo_file.read()
+                                    # Remove background from the image
+                                    output_photo = remove(input_photo)
+                                    photo = Image.open(io.BytesIO(output_photo)).convert("RGBA")
+                                    photo = photo.resize(photo_size)
+                                    
+                                    # Paste photo onto template
+                                    template.paste(photo, photo_position, photo)
+                            except (ImportError, NameError):
+                                # Fallback if rembg is not available
+                                photo = Image.open(profile_photo_path).convert("RGBA")
+                                photo = photo.resize(photo_size)
+                                template.paste(photo, photo_position, photo)
+                        except Exception as e:
+                            print(f"Error processing photo: {str(e)}")
+                            # Fallback to standard method
+                            photo = Image.open(profile_photo_path).convert("RGBA")
+                            photo = photo.resize(photo_size)
+                            template.paste(photo, photo_position, photo)
 
                 # Save the updated ID card
                 filename = f"{student.name}_{student.roll_no}.png"

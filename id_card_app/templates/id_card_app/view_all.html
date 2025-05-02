@@ -8,39 +8,63 @@
     <p class="text-center mb-2">View all previously generated student ID cards</p>
     
     {% if students %}
-        <div class="id-card-grid">
-            {% for student in students %}
-                <div class="id-card-item">
-                    {% if student.image %}
-                        <div class="image-container">
-                            <img src="{{ student.image.url }}" alt="{{ student.name }}'s ID Card" class="id-card-img">
-                            <div class="image-overlay">
-                                <div class="student-details-overlay">
-                                    <h3>{{ student.name }}</h3>
-                                    <p>Class: {{ student.student_class }}{% if student.section %}-{{ student.section }}{% endif %}</p>
-                                    <p>Roll No: {{ student.roll_no }}</p>
-                                </div>
-                            </div>
-                            <button class="view-image-btn" onclick="openImageModal('{{ student.image.url }}', '{{ student.name }}')">View Full Image</button>
-                        </div>
-                    {% else %}
-                        <div class="no-image">No ID Card Image Available</div>
-                    {% endif %}
-                    <div class="id-card-info">
-                        <div class="action-buttons">
+        {% csrf_token %}
+        <div class="table-responsive">
+            <table class="id-card-table">
+                <thead>
+                    <tr>
+                        <th>ID Card</th>
+                        <th>Student Name</th>
+                        <th>Class</th>
+                        <th>Roll No</th>
+                        <th>Father's Name</th>
+                        <th>Mobile</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td class="id-card-cell">
                             {% if student.image %}
-                                <a href="{{ student.image.url }}" download class="btn btn-block mt-2 mb-1">Download</a>
+                                <div class="thumbnail-container">
+                                    <img src="{{ student.image.url }}" alt="{{ student.name }}'s ID Card" class="id-card-thumbnail">
+                                    <button class="view-btn" onclick="openImageModal('{{ student.image.url }}', '{{ student.name }}')">
+                                        <i class="fa fa-eye"></i>
+                                    </button>
+                                </div>
                             {% else %}
-                                <button disabled class="btn btn-block mt-2 mb-1 btn-disabled">No Image to Download</button>
+                                <div class="no-image-small">
+                                    <i class="fa fa-id-card"></i>
+                                </div>
                             {% endif %}
-                            <div class="btn-group">
-                                <a href="{% url 'edit_id_card' student.id %}" class="btn btn-edit">Edit</a>
-                                <a href="{% url 'delete_id_card' student.id %}" class="btn btn-delete">Delete</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+                        </td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.student_class }}{% if student.section %}-{{ student.section }}{% endif %}</td>
+                        <td>{{ student.roll_no }}</td>
+                        <td>{{ student.father_name }}</td>
+                        <td>{{ student.mobile }}</td>
+                        <td class="action-cell">
+                            {% if student.image %}
+                                <button onclick="downloadImage('{{ student.image.url }}', '{{ student.name }}_ID_Card.png')" class="btn-table btn-download" title="Download ID Card">
+                                    <i class="fa fa-download"></i> Download
+                                </button>
+                            {% else %}
+                                <button disabled class="btn-table btn-disabled" title="No Image to Download">
+                                    <i class="fa fa-download"></i> Download
+                                </button>
+                            {% endif %}
+                            <button onclick="window.location.href='{% url 'edit_id_card' student.id %}'" class="btn-table btn-edit" title="Edit ID Card">
+                                <i class="fa fa-edit"></i> Edit
+                            </button>
+                            <button onclick="confirmDelete('{% url 'delete_id_card' student.id %}', '{{ student.name }}')" class="btn-table btn-delete" title="Delete ID Card">
+                                <i class="fa fa-trash"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     {% else %}
         <div class="text-center" style="padding: 2rem;">
@@ -64,24 +88,146 @@
 
 {% block extra_css %}
 <style>
-    .action-buttons {
+    /* Table styles */
+    .table-responsive {
+        overflow-x: auto;
         margin-top: 1rem;
     }
     
-    .btn-group {
-        display: flex;
-        gap: 0.5rem;
-        margin-top: 0.5rem;
+    .id-card-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        overflow: hidden;
     }
     
-    .btn-edit, .btn-delete {
-        flex: 1;
-        padding: 0.6rem 0;
-        font-size: 0.9rem;
+    .id-card-table th,
+    .id-card-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .id-card-table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        color: #495057;
+        position: sticky;
+        top: 0;
+        text-align: center; /* Center align the table headers */
+    }
+    
+    .id-card-table tr:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .id-card-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Thumbnail styles */
+    .thumbnail-container {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        display: inline-block;
+        overflow: hidden;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .id-card-thumbnail {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    
+    .view-btn {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        color: white;
+        border: none;
+        cursor: pointer;
+        opacity: 0;
+        transition: opacity 0.3s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .view-btn i {
+        font-size: 18px;
+    }
+    
+    .thumbnail-container:hover .view-btn {
+        opacity: 1;
+    }
+    
+    .no-image-small {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #f5f5f5;
+        color: #7f8c8d;
+        font-size: 24px;
+        border-radius: 4px;
+    }
+    
+    /* Table buttons */
+    .action-cell {
+        white-space: nowrap;
+        text-align: center;
+    }
+    
+    .btn-table {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 6px 12px;
+        margin: 0 3px;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        min-width: 95px;
+    }
+    
+    .btn-table i {
+        margin-right: 5px;
+    }
+    
+    .btn-table:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-download {
+        background-color: #27ae60;
+    }
+    
+    .btn-download:hover {
+        background-color: #2ecc71;
     }
     
     .btn-edit {
         background-color: #3498db;
+    }
+    
+    .btn-edit:hover {
+        background-color: #2980b9;
     }
     
     .btn-delete {
@@ -95,93 +241,6 @@
     .btn-disabled {
         background-color: #95a5a6;
         cursor: not-allowed;
-    }
-    
-    .no-image {
-        height: 200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background-color: #f5f5f5;
-        color: #7f8c8d;
-        font-weight: 500;
-        border-bottom: 1px solid #eee;
-    }
-    
-    /* Square Image Container */
-    .image-container {
-        position: relative;
-        width: 100%;
-        height: 0;
-        padding-bottom: 100%; /* Makes it square */
-        overflow: hidden;
-        border-bottom: 1px solid #eee;
-    }
-    
-    .id-card-img {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover; /* This will crop the image to fit the square */
-        filter: blur(3px); /* Add blur effect to the image */
-        transform: scale(1.05); /* Slightly enlarge to avoid white edges due to blur */
-    }
-    
-    /* Student details overlay */
-    .image-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        background-color: rgba(0, 0, 0, 0.2); /* Semi-transparent overlay */
-    }
-    
-    .student-details-overlay {
-        text-align: center;
-        color: white;
-        padding: 10px;
-        background-color: rgba(0, 0, 0, 0.6);
-        border-radius: 8px;
-        width: 80%;
-        max-width: 250px;
-    }
-    
-    .student-details-overlay h3 {
-        margin: 0 0 5px 0;
-        font-size: 1.2rem;
-        color: white;
-    }
-    
-    .student-details-overlay p {
-        margin: 5px 0;
-        font-size: 0.9rem;
-    }
-    
-    .view-image-btn {
-        position: absolute;
-        bottom: 10px;
-        left: 50%;
-        transform: translateX(-50%);
-        background-color: rgba(0, 0, 0, 0.7);
-        color: white;
-        border: none;
-        border-radius: 4px;
-        padding: 8px 12px;
-        cursor: pointer;
-        font-size: 14px;
-        opacity: 0;
-        transition: opacity 0.3s;
-        z-index: 5;
-    }
-    
-    .image-container:hover .view-image-btn {
-        opacity: 1;
     }
     
     /* Modal Styles */
@@ -244,6 +303,26 @@
         object-fit: contain;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
+    
+    /* Responsive adjustments for tables */
+    @media (max-width: 768px) {
+        .id-card-table th,
+        .id-card-table td {
+            padding: 8px 10px;
+        }
+        
+        .thumbnail-container,
+        .no-image-small {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .btn-table {
+            width: 32px;
+            height: 32px;
+            margin: 0 2px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -269,6 +348,38 @@
     function closeImageModal() {
         const modal = document.getElementById('imageModal');
         modal.style.display = 'none';
+    }
+    
+    function downloadImage(imageUrl, fileName) {
+        // Create a temporary link element to trigger the download
+        const link = document.createElement('a');
+        link.href = imageUrl;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+    
+    function confirmDelete(deleteUrl, studentName) {
+        if (confirm(`Are you sure you want to delete the ID card for ${studentName}?`)) {
+            // Create a form to submit a POST request (to follow Django's CSRF protection)
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = deleteUrl;
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken.value;
+                form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
     }
 </script>
 {% endblock %}

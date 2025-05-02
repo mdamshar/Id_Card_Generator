@@ -7,12 +7,21 @@
     <h2>{% if edit_mode %}Edit ID Card{% else %}Create New ID Card{% endif %}</h2>
     <p class="text-center mb-2">{% if edit_mode %}Update the student details{% else %}Fill in the student details to generate an ID card{% endif %}</p>
     
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" id="idCardForm">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn btn-block">
-            {% if edit_mode %}Update ID Card{% else %}Generate ID Card{% endif %}
-        </button>
+        <input type="hidden" name="override_existing" id="overrideExisting" value="false">
+        
+        <div class="button-group">
+            {% if not edit_mode %}
+                <button type="button" id="previewBtn" class="btn btn-preview">
+                    <i class="fa fa-eye"></i> Preview ID Card
+                </button>
+            {% endif %}
+            <button type="submit" class="btn btn-generate">
+                {% if edit_mode %}Update ID Card{% else %}Generate ID Card{% endif %}
+            </button>
+        </div>
     </form>
     
     {% if edit_mode %}
@@ -20,6 +29,106 @@
         <a href="{% url 'view_all' %}" class="btn-link">Cancel and return to all ID cards</a>
     </div>
     {% endif %}
+    
+    <!-- Preview Modal -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closePreviewModal()">&times;</span>
+            <h3>ID Card Preview</h3>
+            <div id="previewErrorMessage" class="error-message" style="display: none;">
+                Please fill in all the required fields to preview the ID card.
+            </div>
+            
+            <div class="id-card-preview">
+                <!-- Actual ID Card Template Preview -->
+                <div id="idCardTemplate" class="id-card-template-preview">
+                    <div class="id-card-header">
+                        <div class="school-logo"></div>
+                        <div class="school-name">ZZA ID CARD</div>
+                    </div>
+                    
+                    <div class="id-card-content">
+                        <div class="student-photo-container">
+                            <div id="previewPhoto" class="student-photo">
+                                <i class="fa fa-user"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="student-details">
+                            <div class="student-name-row">
+                                <span>Name:</span>
+                                <span id="previewName" class="student-name"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Father's Name:</span>
+                                <span id="previewFatherName"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Mother's Name:</span>
+                                <span id="previewMotherName"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Class:</span>
+                                <span id="previewClass"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Section:</span>
+                                <span id="previewSection"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Roll No:</span>
+                                <span id="previewRollNo"></span>
+                            </div>
+                            <div class="detail-row">
+                                <span>Mobile:</span>
+                                <span id="previewMobile"></span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="id-card-footer">
+                        <div class="signature">Principal's Signature</div>
+                    </div>
+                </div>
+                
+                <div class="preview-actions">
+                    <button type="button" id="generateFromPreview" class="btn btn-generate-preview">
+                        Generate ID Card
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate Student Confirmation Modal -->
+    <div id="duplicateModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeDuplicateModal()">&times;</span>
+            <h3>Duplicate Student</h3>
+            <div id="duplicateContent" class="text-center">
+                <p>A student with this roll number already exists.</p>
+                <p id="existingStudentInfo"></p>
+                <p>Continue to iterate?</p>
+                <div class="button-group">
+                    <button type="button" class="btn btn-cancel" onclick="closeDuplicateModal()">Cancel</button>
+                    <button type="button" class="btn btn-confirm" onclick="confirmDuplicate()">Continue</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Duplicate Student Confirmation Modal -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeConfirmModal()">&times;</span>
+            <h3>Student Already Exists</h3>
+            <p id="confirmMessage">A student with this roll number already exists. Do you want to continue to iterate?</p>
+            <div class="button-group">
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmModal()">Cancel</button>
+                <button type="button" class="btn btn-generate" onclick="confirmOverride()">Continue to Iterate</button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -34,5 +143,493 @@
     .btn-link:hover {
         text-decoration: underline;
     }
+    
+    /* Button group styles */
+    .button-group {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .btn-preview {
+        background-color: #3498db;
+        flex: 1;
+    }
+    
+    .btn-preview:hover {
+        background-color: #2980b9;
+    }
+    
+    .btn-generate {
+        background-color: #27ae60;
+        flex: 2;
+    }
+    
+    .btn-generate:hover {
+        background-color: #2ecc71;
+    }
+    
+    /* Modal styles for preview */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.7);
+    }
+    
+    .modal-content {
+        background-color: white;
+        margin: 2% auto;
+        padding: 25px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 700px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        position: relative;
+    }
+    
+    .close {
+        color: #aaa;
+        position: absolute;
+        top: 10px;
+        right: 20px;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover {
+        color: #333;
+    }
+    
+    /* Preview ID card styles */
+    .id-card-preview {
+        margin-top: 20px;
+    }
+    
+    .id-card-template {
+        background-color: #f8f9fa;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+    
+    @media (min-width: 768px) {
+        .id-card-template {
+            flex-direction: row;
+        }
+    }
+    
+    .preview-photo-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    
+    .preview-photo {
+        width: 150px;
+        height: 150px;
+        border-radius: 8px;
+        background-color: #eee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .preview-photo i {
+        font-size: 60px;
+        color: #999;
+    }
+    
+    .preview-photo img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .preview-details {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .preview-row {
+        padding: 8px 12px;
+        background-color: white;
+        border-radius: 4px;
+        border-left: 3px solid #0071BC;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    .preview-row strong {
+        display: inline-block;
+        width: 110px;
+        color: #495057;
+    }
+    
+    .preview-actions {
+        text-align: center;
+    }
+    
+    .btn-generate-preview {
+        background-color: #27ae60;
+        padding: 10px 30px;
+        font-size: 16px;
+    }
+    
+    .btn-generate-preview:hover {
+        background-color: #2ecc71;
+    }
+    
+    .error-message {
+        background-color: #ffecec;
+        color: #e74c3c;
+        padding: 10px 15px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        border-left: 4px solid #e74c3c;
+    }
+
+    /* New styles for realistic ID card preview */
+    .id-card-template-preview {
+        background-color: #fff;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+    }
+
+    .id-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 10px;
+    }
+
+    .school-logo {
+        width: 50px;
+        height: 50px;
+        background-color: #eee;
+        border-radius: 50%;
+    }
+
+    .school-name {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .id-card-content {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+    }
+
+    .student-photo-container {
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .student-photo {
+        width: 100px;
+        height: 100px;
+        border-radius: 8px;
+        background-color: #eee;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .student-details {
+        flex: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .student-name-row {
+        font-size: 16px;
+        font-weight: bold;
+        color: #333;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 12px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        border-left: 3px solid #0071BC;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .id-card-footer {
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        border-top: 1px solid #ddd;
+        padding-top: 10px;
+    }
+
+    .signature {
+        font-size: 14px;
+        color: #333;
+    }
+
+    /* Confirm message styling */
+    .confirm-message {
+        margin-top: 20px;
+        padding: 15px;
+        background-color: #fff8e1;
+        border-left: 4px solid #ffc107;
+        border-radius: 4px;
+        font-weight: bold;
+        text-align: center;
+    }
+
+    /* Modal Styles */
+    .modal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0,0,0,0.4);
+    }
+    
+    .modal-content {
+        background-color: #fefefe;
+        margin: 10% auto;
+        padding: 20px;
+        border: 1px solid #888;
+        width: 80%;
+        max-width: 600px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .close {
+        color: #aaa;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .close:hover {
+        color: black;
+    }
+    
+    #previewContent {
+        margin-top: 20px;
+    }
+    
+    .button-group {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+    }
+    
+    .btn-cancel {
+        background-color: #f44336;
+        color: white;
+    }
+    
+    .btn-confirm {
+        background-color: #4CAF50;
+        color: white;
+    }
 </style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Preview modal functionality
+    const previewModal = document.getElementById('previewModal');
+    const previewBtn = document.getElementById('previewBtn');
+    const generateFromPreviewBtn = document.getElementById('generateFromPreview');
+    const errorMessage = document.getElementById('previewErrorMessage');
+    
+    // Preview fields
+    const previewName = document.getElementById('previewName');
+    const previewFatherName = document.getElementById('previewFatherName');
+    const previewMotherName = document.getElementById('previewMotherName');
+    const previewClass = document.getElementById('previewClass');
+    const previewSection = document.getElementById('previewSection');
+    const previewRollNo = document.getElementById('previewRollNo');
+    const previewMobile = document.getElementById('previewMobile');
+    const previewPhoto = document.getElementById('previewPhoto');
+    
+    // Form elements
+    const form = document.getElementById('idCardForm');
+    const overrideExistingInput = document.getElementById('overrideExisting');
+    
+    // Confirmation modal
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmMessage = document.getElementById('confirmMessage');
+    
+    // Initialize the preview button
+    if (previewBtn) {
+        previewBtn.addEventListener('click', showPreview);
+    }
+    
+    // Initialize the generate button in preview modal
+    if (generateFromPreviewBtn) {
+        generateFromPreviewBtn.addEventListener('click', function() {
+            form.submit();
+        });
+    }
+    
+    // Show the preview modal with data from the form
+    function showPreview() {
+        // Get form inputs
+        const nameInput = document.querySelector('input[name="name"]');
+        const fatherNameInput = document.querySelector('input[name="father_name"]');
+        const motherNameInput = document.querySelector('input[name="mother_name"]');
+        const classInput = document.querySelector('input[name="student_class"]');
+        const sectionInput = document.querySelector('input[name="section"]');
+        const rollNoInput = document.querySelector('input[name="roll_no"]');
+        const mobileInput = document.querySelector('input[name="mobile"]');
+        const photoInput = document.querySelector('input[name="profile_photo"]');
+        
+        // Check if all required fields are filled
+        if (!nameInput.value || !fatherNameInput.value || !classInput.value || !rollNoInput.value) {
+            errorMessage.style.display = 'block';
+            previewModal.style.display = 'block';
+            return;
+        }
+        
+        // Hide error message if all required fields are filled
+        errorMessage.style.display = 'none';
+        
+        // Fill in preview data
+        previewName.textContent = nameInput.value;
+        previewFatherName.textContent = fatherNameInput.value;
+        previewMotherName.textContent = motherNameInput.value || 'N/A';
+        previewClass.textContent = classInput.value;
+        previewSection.textContent = sectionInput.value || 'N/A';
+        previewRollNo.textContent = rollNoInput.value;
+        previewMobile.textContent = mobileInput.value || 'N/A';
+        
+        // Handle preview photo
+        if (photoInput.files && photoInput.files[0]) {
+            // Create preview image
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                // Clear the icon and add the image
+                previewPhoto.innerHTML = '';
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                previewPhoto.appendChild(img);
+            }
+            reader.readAsDataURL(photoInput.files[0]);
+        } else {
+            // Display default icon if no photo
+            previewPhoto.innerHTML = '<i class="fa fa-user"></i>';
+        }
+        
+        // Show the modal
+        previewModal.style.display = 'block';
+    }
+    
+    // Close the preview modal
+    function closePreviewModal() {
+        previewModal.style.display = 'none';
+    }
+    
+    // Close the confirmation modal
+    function closeConfirmModal() {
+        confirmModal.style.display = 'none';
+    }
+    
+    // Function to confirm overriding existing student
+    function confirmOverride() {
+        overrideExistingInput.value = 'true';
+        form.submit();
+    }
+    
+    // Make functions globally accessible
+    window.closePreviewModal = closePreviewModal;
+    window.closeConfirmModal = closeConfirmModal;
+    window.confirmOverride = confirmOverride;
+    
+    // Close modal when clicking outside of it
+    window.onclick = function(event) {
+        if (event.target === previewModal) {
+            closePreviewModal();
+        } else if (event.target === confirmModal) {
+            closeConfirmModal();
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Check if student exists before form submission
+        form.addEventListener('submit', function(e) {
+            // Skip the check if we're in edit mode or override is already set
+            if ({% if edit_mode %}true{% else %}false{% endif %} || overrideExistingInput.value === 'true') {
+                return true;
+            }
+            
+            e.preventDefault();
+            
+            const rollNo = document.querySelector('input[name="roll_no"]').value;
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+            
+            fetch("{% url 'check_student_exists' %}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken
+                },
+                body: 'roll_no=' + encodeURIComponent(rollNo)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.exists) {
+                    // Update the confirmation message with student details
+                    confirmMessage.innerHTML = `A student with roll number <b>${rollNo}</b> already exists: <b>${data.student_name}</b> (${data.student_class}).
+                    <br><br>Do you want to continue to iterate?`;
+                    
+                    // Show the confirmation modal
+                    confirmModal.style.display = 'block';
+                } else {
+                    // No duplicate, submit the form
+                    form.submit();
+                }
+            })
+            .catch(error => {
+                console.error('Error checking for existing student:', error);
+                // On error, just submit the form
+                form.submit();
+            });
+        });
+    });
+</script>
 {% endblock %}

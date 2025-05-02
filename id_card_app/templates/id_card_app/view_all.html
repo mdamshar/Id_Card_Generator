@@ -7,6 +7,39 @@
     <h2>All Generated ID Cards</h2>
     <p class="text-center mb-2">View all previously generated student ID cards</p>
     
+    <!-- Class Filter Section -->
+    <div class="filter-section">
+        <form method="get" id="classFilterForm">
+            <div class="filter-container">
+                <label for="class_filter">Filter by Class:</label>
+                <select name="class_filter" id="class_filter" class="filter-select">
+                    <option value="">All Classes</option>
+                    {% for class_name in all_classes %}
+                        <option value="{{ class_name }}" {% if selected_class == class_name %}selected{% endif %}>{{ class_name }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-filter">Apply Filter</button>
+                {% if selected_class %}
+                    <a href="{% url 'view_all' %}" class="btn-clear">Clear Filter</a>
+                {% endif %}
+            </div>
+        </form>
+        
+        {% if students %}
+        <div class="bulk-actions">
+            <!-- Download All button -->
+            <a href="{% url 'download_all_cards' %}{% if selected_class %}?class_filter={{ selected_class }}{% endif %}" class="btn-bulk btn-download-all">
+                <i class="fa fa-download"></i> Download All
+            </a>
+            
+            <!-- Delete All button with confirmation -->
+            <button onclick="confirmDeleteAll('{% if selected_class %}{{ selected_class }}{% endif %}')" class="btn-bulk btn-delete-all">
+                <i class="fa fa-trash"></i> Delete All
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    
     {% if students %}
         {% csrf_token %}
         <div class="table-responsive">
@@ -68,8 +101,13 @@
         </div>
     {% else %}
         <div class="text-center" style="padding: 2rem;">
-            <p>No ID cards have been generated yet.</p>
-            <a href="{% url 'new_id_card' %}" class="btn mt-2">Create Your First ID Card</a>
+            {% if selected_class %}
+                <p>No ID cards found for class "{{ selected_class }}".</p>
+                <a href="{% url 'view_all' %}" class="btn mt-2">View All Classes</a>
+            {% else %}
+                <p>No ID cards have been generated yet.</p>
+                <a href="{% url 'new_id_card' %}" class="btn mt-2">Create Your First ID Card</a>
+            {% endif %}
         </div>
     {% endif %}
 </div>
@@ -323,6 +361,133 @@
             margin: 0 2px;
         }
     }
+
+    /* Filter styles */
+    .filter-section {
+        margin: 15px 0;
+        padding: 15px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #eee;
+    }
+    
+    .filter-container {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .filter-select {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: white;
+        min-width: 150px;
+        font-size: 14px;
+    }
+    
+    label {
+        font-weight: 500;
+        color: #495057;
+    }
+    
+    .btn-filter {
+        background-color: #0071BC;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 15px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-filter:hover {
+        background-color: #005a93;
+    }
+    
+    .btn-clear {
+        background-color: #6c757d;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        padding: 8px 15px;
+        cursor: pointer;
+        font-weight: 500;
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+    
+    .btn-clear:hover {
+        background-color: #5a6268;
+    }
+    
+    @media (max-width: 768px) {
+        .filter-container {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .filter-select {
+            width: 100%;
+        }
+        
+        .btn-filter, .btn-clear {
+            width: 100%;
+            text-align: center;
+        }
+    }
+
+    /* Bulk action buttons */
+    .bulk-actions {
+        display: flex;
+        justify-content: center;
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #eee;
+        gap: 15px;
+    }
+    
+    .btn-bulk {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 20px;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        font-size: 15px;
+        font-weight: 500;
+        min-width: 150px;
+    }
+    
+    .btn-bulk i {
+        margin-right: 8px;
+    }
+    
+    .btn-download-all {
+        background-color: #27ae60;
+    }
+    
+    .btn-download-all:hover {
+        background-color: #2ecc71;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    
+    .btn-delete-all {
+        background-color: #e74c3c;
+    }
+    
+    .btn-delete-all:hover {
+        background-color: #c0392b;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
 </style>
 {% endblock %}
 
@@ -375,6 +540,43 @@
                 csrfInput.name = 'csrfmiddlewaretoken';
                 csrfInput.value = csrfToken.value;
                 form.appendChild(csrfInput);
+            }
+            
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+
+    function confirmDeleteAll(selectedClass) {
+        let confirmMessage = 'Are you sure you want to delete ALL ID cards';
+        if (selectedClass) {
+            confirmMessage += ` for class "${selectedClass}"`;
+        }
+        confirmMessage += '? This action cannot be undone.';
+        
+        if (confirm(confirmMessage)) {
+            // Create a form to submit a POST request
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '{% url "delete_all_cards" %}';
+            
+            // Add CSRF token
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+            if (csrfToken) {
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = csrfToken.value;
+                form.appendChild(csrfInput);
+            }
+            
+            // Add class filter if present
+            if (selectedClass) {
+                const classInput = document.createElement('input');
+                classInput.type = 'hidden';
+                classInput.name = 'class_filter';
+                classInput.value = selectedClass;
+                form.appendChild(classInput);
             }
             
             document.body.appendChild(form);
